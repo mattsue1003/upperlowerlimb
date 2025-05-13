@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上下肢動作配對生成器</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        h1 {
+            color: #3b7ea1;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .exercise-display {
+            background-color: #e9f2f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 24px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .exercise-item {
+            margin: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        button {
+            background-color: #4a9dd6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3b7ea1;
+        }
+        
+        .exercise-lists {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .exercise-column {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .exercise-list {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        h2 {
+            color: #4a9dd6;
+            margin-top: 10px;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .delete-btn {
+            color: red;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .add-form {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        input[type="text"] {
+            padding: 8px;
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .add-btn {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .list-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @keyframes flash {
+            0% { background-color: #4a9dd6; color: white; }
+            100% { background-color: #e9f2f9; color: #333; }
+        }
+    </style>
+</head>
+<body>
+    <h1>上下肢動作配對生成器</h1>
+    
+    <div class="container">
+        <div class="exercise-display">
+            <div class="exercise-item" id="upper-exercise">上肢動作：等待生成...</div>
+            <div class="exercise-item" id="lower-exercise">下肢動作：等待生成...</div>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="generate-btn">隨機生成配對</button>
+            <button id="reset-btn">重置動作列表</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="exercise-lists">
+            <div class="exercise-column">
+                <div class="list-title">
+                    <h2>上肢動作</h2>
+                </div>
+                <div class="exercise-list">
+                    <ul id="upper-list">
+                        <!-- 上肢動作列表 -->
+                    </ul>
+                    <div class="add-form">
+                        <input type="text" id="new-upper" placeholder="新增上肢動作">
+                        <button class="add-btn" id="add-upper-btn">新增</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="exercise-column">
+                <div class="list-title">
+                    <h2>下肢動作</h2>
+                </div>
+                <div class="exercise-list">
+                    <ul id="lower-list">
+                        <!-- 下肢動作列表 -->
+                    </ul>
+                    <div class="add-form">
+                        <input type="text" id="new-lower" placeholder="新增下肢動作">
+                        <button class="add-btn" id="add-lower-btn">新增</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 等待DOM加載完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始動作列表
+            const defaultUpperExercises = [
+                "一元復始", "雙喜臨門", "三陽開泰", "四四如意", 
+                "五福臨門", "六六大順", "七星高照", "八面玲瓏", 
+                "九九同心", "十全十美", "猜拳", "指揮家", 
+                "自由式仰式", "頭肩交叉肩"
+            ];
+            
+            const defaultLowerExercises = [
+                "踏步", "點步", "踏併步", "麻花步", 
+                "超慢跑", "猿猴式超慢跑", "深蹲", 
+                "曼波", "恰恰", "三步向前抬膝"
+            ];
+            
+            // 儲存當前動作列表
+            let upperExercises = [...defaultUpperExercises];
+            let lowerExercises = [...defaultLowerExercises];
+            
+            // 獲取DOM元素
+            const upperExercise = document.getElementById('upper-exercise');
+            const lowerExercise = document.getElementById('lower-exercise');
+            const generateBtn = document.getElementById('generate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const upperList = document.getElementById('upper-list');
+            const lowerList = document.getElementById('lower-list');
+            const newUpperInput = document.getElementById('new-upper');
+            const newLowerInput = document.getElementById('new-lower');
+            const addUpperBtn = document.getElementById('add-upper-btn');
+            const addLowerBtn = document.getElementById('add-lower-btn');
+            
+            // 渲染動作列表
+            function renderExerciseList(listElement, exercises) {
+                listElement.innerHTML = '';
+                exercises.forEach((exercise, index) => {
+                    const li = document.createElement('li');
+                    
+                    // 創建動作文本
+                    const text = document.createElement('span');
+                    text.textContent = exercise;
+                    li.appendChild(text);
+                    
+                    // 添加刪除按鈕
+                    const deleteBtn = document.createElement('span');
+                    deleteBtn.textContent = '×';
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.addEventListener('click', function() {
+                        if (listElement === upperList) {
+                            upperExercises.splice(index, 1);
+                            renderExerciseList(upperList, upperExercises);
+                        } else {
+                            lowerExercises.splice(index, 1);
+                            renderExerciseList(lowerList, lowerExercises);
+                        }
+                    });
+                    
+                    li.appendChild(deleteBtn);
+                    listElement.appendChild(li);
+                });
+            }
+            
+            // 隨機生成配對
+            function generateRandomPair() {
+                if (upperExercises.length === 0 || lowerExercises.length === 0) {
+                    alert('請確保上肢和下肢動作列表都不為空！');
+                    return;
+                }
+                
+                const randomUpperIndex = Math.floor(Math.random() * upperExercises.length);
+                const randomLowerIndex = Math.floor(Math.random() * lowerExercises.length);
+                
+                upperExercise.textContent = `上肢動作：${upperExercises[randomUpperIndex]}`;
+                lowerExercise.textContent = `下肢動作：${lowerExercises[randomLowerIndex]}`;
+                
+                // 添加動畫效果
+                upperExercise.style.animation = 'none';
+                lowerExercise.style.animation = 'none';
+                void upperExercise.offsetWidth; // 重新觸發動畫
+                void lowerExercise.offsetWidth;
+                upperExercise.style.animation = 'flash 0.5s';
+                lowerExercise.style.animation = 'flash 0.5s';
+            }
+            
+            // 重置動作列表
+            function resetExerciseLists() {
+                if (confirm('確定要重置動作列表嗎？這將恢復預設動作並刪除所有自定義動作。')) {
+                    upperExercises = [...defaultUpperExercises];
+                    lowerExercises = [...defaultLowerExercises];
+                    renderExerciseList(upperList, upperExercises);
+                    renderExerciseList(lowerList, lowerExercises);
+                    upperExercise.textContent = '上肢動作：等待生成...';
+                    lowerExercise.textContent = '下肢動作：等待生成...';
+                }
+            }
+            
+            // 添加新動作
+            function addUpperExercise() {
+                const value = newUpperInput.value.trim();
+                
+                if (value === '') {
+                    alert('請輸入動作名稱！');
+                    return;
+                }
+                
+                if (!upperExercises.includes(value)) {
+                    upperExercises.push(value);
+                    renderExerciseList(upperList, upperExercises);
+                    newUpperInput.value = '';
+                } else {
+                    alert('該動作已存在！');
+                }
+            }
+            
+            function addLowerExercise() {
+                const value = newLowerInput.value.trim();
+                
+                if (value === '') {
+                    alert('請輸入動作名稱！');
+                    return;
+                }
+                
+                if (!lowerExercises.includes(value)) {
+                    lowerExercises.push(value);
+                    renderExerciseList(lowerList, lowerExercises);
+                    newLowerInput.value = '';
+                } else {
+                    alert('該動作已存在！');
+                }
+            }
+            
+            // 初始化列表
+            renderExerciseList(upperList, upperExercises);
+            renderExerciseList(lowerList, lowerExercises);
+            
+            // 綁定事件
+            generateBtn.addEventListener('click', generateRandomPair);
+            resetBtn.addEventListener('click', resetExerciseLists);
+            
+            addUpperBtn.addEventListener('click', addUpperExercise);
+            addLowerBtn.addEventListener('click', addLowerExercise);
+            
+            newUpperInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addUpperExercise();
+                }
+            });
+            
+            newLowerInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addLowerExercise();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
