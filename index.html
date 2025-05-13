@@ -136,6 +136,20 @@
             margin-top: 20px;
         }
         
+        .status-message {
+            text-align: center;
+            color: #28a745;
+            font-size: 14px;
+            height: 20px;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .show-message {
+            opacity: 1;
+        }
+        
         @keyframes flash {
             0% { background-color: #4a9dd6; color: white; }
             100% { background-color: #e9f2f9; color: #333; }
@@ -155,6 +169,7 @@
             <button id="generate-btn">隨機生成配對</button>
             <button id="reset-btn">重置動作列表</button>
         </div>
+        <div id="status-message" class="status-message"></div>
     </div>
     
     <div class="container">
@@ -208,10 +223,6 @@
                 "曼波", "恰恰", "三步向前抬膝"
             ];
             
-            // 儲存當前動作列表
-            let upperExercises = [...defaultUpperExercises];
-            let lowerExercises = [...defaultLowerExercises];
-            
             // 獲取DOM元素
             const upperExercise = document.getElementById('upper-exercise');
             const lowerExercise = document.getElementById('lower-exercise');
@@ -223,6 +234,46 @@
             const newLowerInput = document.getElementById('new-lower');
             const addUpperBtn = document.getElementById('add-upper-btn');
             const addLowerBtn = document.getElementById('add-lower-btn');
+            const statusMessage = document.getElementById('status-message');
+            
+            // 從localStorage讀取數據，如果沒有則使用默認值
+            let upperExercises;
+            let lowerExercises;
+
+            try {
+                const storedUpper = localStorage.getItem('upperExercises');
+                const storedLower = localStorage.getItem('lowerExercises');
+                
+                // 只有當localStorage中有數據，且數據長度不為0時，才使用存儲的數據
+                upperExercises = storedUpper && JSON.parse(storedUpper).length > 0 
+                    ? JSON.parse(storedUpper) 
+                    : [...defaultUpperExercises];
+                    
+                lowerExercises = storedLower && JSON.parse(storedLower).length > 0 
+                    ? JSON.parse(storedLower) 
+                    : [...defaultLowerExercises];
+            } catch (e) {
+                console.error('讀取本地存儲失敗，使用默認值', e);
+                upperExercises = [...defaultUpperExercises];
+                lowerExercises = [...defaultLowerExercises];
+            }
+            
+            // 顯示暫時的狀態消息
+            function showMessage(message, isSuccess = true) {
+                statusMessage.textContent = message;
+                statusMessage.style.color = isSuccess ? '#28a745' : '#dc3545';
+                statusMessage.classList.add('show-message');
+                
+                setTimeout(() => {
+                    statusMessage.classList.remove('show-message');
+                }, 2000);
+            }
+            
+            // 保存數據到localStorage
+            function saveExercisesToStorage() {
+                localStorage.setItem('upperExercises', JSON.stringify(upperExercises));
+                localStorage.setItem('lowerExercises', JSON.stringify(lowerExercises));
+            }
             
             // 渲染動作列表
             function renderExerciseList(listElement, exercises) {
@@ -243,9 +294,13 @@
                         if (listElement === upperList) {
                             upperExercises.splice(index, 1);
                             renderExerciseList(upperList, upperExercises);
+                            saveExercisesToStorage();
+                            showMessage('已刪除上肢動作');
                         } else {
                             lowerExercises.splice(index, 1);
                             renderExerciseList(lowerList, lowerExercises);
+                            saveExercisesToStorage();
+                            showMessage('已刪除下肢動作');
                         }
                     });
                     
@@ -285,6 +340,8 @@
                     renderExerciseList(lowerList, lowerExercises);
                     upperExercise.textContent = '上肢動作：等待生成...';
                     lowerExercise.textContent = '下肢動作：等待生成...';
+                    saveExercisesToStorage();
+                    showMessage('已重置所有動作列表');
                 }
             }
             
@@ -300,7 +357,9 @@
                 if (!upperExercises.includes(value)) {
                     upperExercises.push(value);
                     renderExerciseList(upperList, upperExercises);
+                    saveExercisesToStorage();
                     newUpperInput.value = '';
+                    showMessage('已新增上肢動作');
                 } else {
                     alert('該動作已存在！');
                 }
@@ -317,7 +376,9 @@
                 if (!lowerExercises.includes(value)) {
                     lowerExercises.push(value);
                     renderExerciseList(lowerList, lowerExercises);
+                    saveExercisesToStorage();
                     newLowerInput.value = '';
+                    showMessage('已新增下肢動作');
                 } else {
                     alert('該動作已存在！');
                 }
